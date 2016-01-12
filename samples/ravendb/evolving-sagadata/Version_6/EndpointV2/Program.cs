@@ -1,12 +1,17 @@
 ﻿using System;
+using System.Threading.Tasks;
 using NServiceBus;
 using NServiceBus.Persistence;
 using Raven.Client.Document;
 
 class Program
 {
-
     static void Main()
+    {
+        AsyncMain().GetAwaiter().GetResult();
+    }
+
+    static async Task AsyncMain()
     {
         #region registerConverter
         BusConfiguration busConfiguration = new BusConfiguration();
@@ -28,8 +33,10 @@ class Program
         busConfiguration.UseSerialization<JsonSerializer>();
         busConfiguration.EnableInstallers();
 
-        using (IBus bus = Bus.Create(busConfiguration).Start())
+        IEndpointInstance endpoint = await Endpoint.Start(busConfiguration);
+        try
         {
+            IBusSession busSession = endpoint.CreateBusSession();
             Console.WriteLine("Press 'S' to start reset the saga");
             Console.WriteLine("Press 'I' to increment the order count");
             Console.WriteLine("Press any other key to exit");
@@ -41,7 +48,7 @@ class Program
 
                 if (key.Key == ConsoleKey.S)
                 {
-                    bus.SendLocal(new StartOrder
+                    await busSession.SendLocal(new StartOrder
                     {
                         OrderId = 10,
                         ItemCount = 5
@@ -51,7 +58,7 @@ class Program
 
                 if (key.Key == ConsoleKey.I)
                 {
-                    bus.SendLocal(new IncrementOrder
+                    await busSession.SendLocal(new IncrementOrder
                     {
                         OrderId = 10,
                     });
@@ -59,6 +66,10 @@ class Program
                 }
                 return;
             }
+        }
+        finally
+        {
+            await endpoint.Stop();
         }
     }
 }

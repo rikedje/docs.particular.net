@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using NServiceBus;
 using NServiceBus.RavenDB.Persistence.SagaPersister;
-using NServiceBus.Saga;
 using Raven.Abstractions.Data;
 using Raven.Client.Document;
 
